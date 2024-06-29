@@ -5,6 +5,9 @@ on:
     branches:
       - master
       - develop
+    # Publish semver tags as releases.
+    tags:
+      - 'v*.*.*'
 
 jobs:
   build_multi_arch_image:
@@ -26,11 +29,11 @@ jobs:
         with:
           install: true
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      #- name: Login to DockerHub
+      #  uses: docker/login-action@v3
+      #  with:
+      #    username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #    password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -39,6 +42,16 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Extract metadata (tags, labels) for Docker
+      # https://github.com/docker/metadata-action
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v4.6.0
+        with:
+          images: |
+            ghcr.io/${{ github.repository }}
+          flavor: latest=true
+
       - name: Build and push master (Alpine)
         if: ${{ github.ref == 'refs/heads/master' }}
         uses: docker/build-push-action@v5
@@ -46,11 +59,11 @@ jobs:
           provenance: false # enable later when runtime support is better
           target: deploy
           push: true
+          #charlocharlie/epicgames-freegames:latest
+          #charlocharlie/epicgames-freegames:${{ github.sha }}
           tags: |
-            charlocharlie/epicgames-freegames:latest
-            charlocharlie/epicgames-freegames:${{ github.sha }}
-            ghcr.io/claabs/epicgames-freegames-node:latest
-            ghcr.io/claabs/epicgames-freegames-node:${{ github.sha }}
+            ghcr.io/davralin/epicgames-freegames-node:latest
+            ghcr.io/davralin/epicgames-freegames-node:${{ github.sha }}
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           build-args: |
             COMMIT_SHA=${{ github.sha }}
@@ -58,39 +71,39 @@ jobs:
           cache-from: type=gha,scope=${{ github.workflow }}
           cache-to: type=gha,mode=max,scope=${{ github.workflow }}
 
-      - name: Build and push master (Debian)
-        if: ${{ github.ref == 'refs/heads/master' }}
-        uses: docker/build-push-action@v5
-        with:
-          provenance: false # enable later when runtime support is better
-          target: deploy
-          push: true
-          file: Dockerfile.debian
-          tags: |
-            charlocharlie/epicgames-freegames:bullseye-slim
-            ghcr.io/claabs/epicgames-freegames-node:bullseye-slim
-            charlocharlie/epicgames-freegames:debian
-            ghcr.io/claabs/epicgames-freegames-node:debian
-          platforms: linux/amd64
-          build-args: |
-            COMMIT_SHA=${{ github.sha }}
-            BRANCH=${{ env.GIT_BRANCH }}
-          cache-from: type=gha,scope=${{ github.workflow }}-Debian
-          cache-to: type=gha,mode=max,scope=${{ github.workflow }}-Debian
+      #- name: Build and push master (Debian)
+      #  if: ${{ github.ref == 'refs/heads/master' }}
+      #  uses: docker/build-push-action@v5
+      #  with:
+      #    provenance: false # enable later when runtime support is better
+      #    target: deploy
+      #    push: true
+      #    file: Dockerfile.debian
+      #    tags: |
+      #      charlocharlie/epicgames-freegames:bullseye-slim
+      #      ghcr.io/claabs/epicgames-freegames-node:bullseye-slim
+      #      charlocharlie/epicgames-freegames:debian
+      #      ghcr.io/claabs/epicgames-freegames-node:debian
+      #    platforms: linux/amd64
+      #    build-args: |
+      #      COMMIT_SHA=${{ github.sha }}
+      #      BRANCH=${{ env.GIT_BRANCH }}
+      #    cache-from: type=gha,scope=${{ github.workflow }}-Debian
+      #    cache-to: type=gha,mode=max,scope=${{ github.workflow }}-Debian
 
-      - name: Build and push dev
-        if: ${{ github.ref == 'refs/heads/develop' }}
-        uses: docker/build-push-action@v5
-        with:
-          provenance: false # enable later when runtime support is better
-          target: deploy
-          push: true
-          tags: |
-            charlocharlie/epicgames-freegames:dev
-            ghcr.io/claabs/epicgames-freegames-node:dev
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
-          build-args: |
-            COMMIT_SHA=${{ github.sha }}
-            BRANCH=${{ env.GIT_BRANCH }}
-          cache-from: type=gha,scope=${{ github.workflow }}
-          cache-to: type=gha,mode=max,scope=${{ github.workflow }}
+      #- name: Build and push dev
+      #  if: ${{ github.ref == 'refs/heads/develop' }}
+      #  uses: docker/build-push-action@v5
+      #  with:
+      #    provenance: false # enable later when runtime support is better
+      #    target: deploy
+      #    push: true
+      #    tags: |
+      #      charlocharlie/epicgames-freegames:dev
+      #      ghcr.io/claabs/epicgames-freegames-node:dev
+      #    platforms: linux/amd64,linux/arm64,linux/arm/v7
+      #    build-args: |
+      #      COMMIT_SHA=${{ github.sha }}
+      #      BRANCH=${{ env.GIT_BRANCH }}
+      #    cache-from: type=gha,scope=${{ github.workflow }}
+      #    cache-to: type=gha,mode=max,scope=${{ github.workflow }}
