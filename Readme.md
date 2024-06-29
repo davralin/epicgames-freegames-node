@@ -1,3 +1,4 @@
+## lol
 # Epic Games Store Weekly Free Games
 
 Automatically login and find available free games the Epic Games Store.
